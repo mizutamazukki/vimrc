@@ -1,92 +1,130 @@
-set nocompatible
-filetype plugin indent off
-set runtimepath+=~/.vim/bundle/neobundle.vim
+filetype off                   " Required!
+if has('vim_starting')
+  set runtimepath+=~/.vim/bundle/neobundle.vim/
+endif
 call neobundle#begin(expand('~/.vim/bundle/'))
-    NeoBundleFetch 'Shougo/neobundle.vim'
+NeoBundleFetch 'Shougo/neobundle.vim'
 call neobundle#end()
-
-NeoBundle 'Shougo/vimproc'
-NeoBundle 'Shougo/unite.vim'
-NeoBundle 'Shougo/neosnippet-snippets'
-NeoBundle 'Shougo/neosnippet'
-NeoBundle 'Shougo/neosnippet-snippets'
+NeoBundle 'tomasr/molokai'
+NeoBundle 'ruby-matchit'
+NeoBundle 'scrooloose/syntastic'
 NeoBundle 'scrooloose/nerdtree'
-filetype plugin on
-filetype indent on
-set number         " 行番号を表示する
-set cursorline     " カーソル行の背景色を変える
-set cursorcolumn   " カーソル位置のカラムの背景色を変える
-set laststatus=2   " ステータス行を常に表示
-set cmdheight=2    " メッセージ表示欄を2行確保
-set showmatch      " 対応する括弧を強調表示
-set helpheight=999 " ヘルプを画面いっぱいに開く
-set list           " 不可視文字を表示
-" " 不可視文字の表示記号指定et listchars=tab:▸\ ,eol:↲,extends:❯,precedes:❮
+NeoBundle 'tpope/vim-rails'
+NeoBundle 'dbext.vim'
+NeoBundle 'mattn/emmet-vim'
 
+" ------------------------------------
+" colorscheme
+" ------------------------------------
 
-" " カーソル移動関連の設定
-"
-set backspace=indent,eol,start " Backspaceキーの影響範囲に制限を設けない
-set whichwrap=b,s,h,l,<,>,[,]  " 行頭行末の左右移動で行をまたぐ
-set scrolloff=8                " 上下8行の視界を確保
-set sidescrolloff=16           " 左右スクロール時の視界を確保
-set sidescroll=1               " 左右スクロールは一文字づつ行う
-"
-" " ファイル処理関連の設定
-"
-set confirm    " 保存されていないファイルがあるときは終了前に保存確認
-set hidden     "
-" 保存されていないファイルがあるときでも別のファイルを開くことが出来る
-set autoread   "外部でファイルに変更がされた場合は読みなおす
-set nobackup   " ファイル保存時にバックアップファイルを作らない
-set noswapfile " ファイル編集中にスワップファイルを作らない
-"
-" " 検索/置換の設定
-"
-set hlsearch   " 検索文字列をハイライトする
-set incsearch  " インクリメンタルサーチを行う
-set ignorecase " 大文字と小文字を区別しない
-set smartcase  "
-" 大文字と小文字が混在した言葉で検索を行った場合に限り、大文字と小文字を区別する
-set wrapscan   " 最後尾まで検索を終えたら次の検索で先頭に移る
-set gdefault   " 置換の時 g オプションをデフォルトで有効にする
-" " タブ/インデントの設定
-"
-set expandtab     " タブ入力を複数の空白入力に置き換える
-set tabstop=4     " 画面上でタブ文字が占める幅
-set shiftwidth=4  " 自動インデントでずれる幅
-set softtabstop=4
-set shiftround
-set autoindent    " 改行時に前の行のインデントを継続する
-set smartindent   "
-" " OSのクリップボードをレジスタ指定無しで Yank, Put 出来るようにする
-set clipboard=unnamed,unnamedplus
-" " マウスの入力を受け付ける
-set mouse=a
-" " Windows でもパスの区切り文字を / にする
-set shellslash
-"
-" " コマンドラインモードでTABキーによるファイル名補完を有効にする
-set wildmenu wildmode=list:longest,full
-" " コマンドラインの履歴を10000件保存する
+syntax on
+colorscheme molokai
+" iTerm2で半透明にしているが、vimのcolorschemeを設定すると背景も変更されるため
+highlight Normal ctermbg=none
+let g:molokai_original = 1
+let g:rehash256 = 1
+
+"-------------設定-------------------------
+set number
+set smartcase
+set noshowmatch
+set noswapfile
+set vb t_vb=
+set novisualbell
+set ruler
+"消すな
+set bs=start,indent
+"消すな
 set history=10000
+set mouse=a
+"補完"
+set showcmd
+set autoindent
+for k in split("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_",'\zs')
+  exec "imap <expr> " . k . " pumvisible() ? '" . k . "' : '" . k . "\<C-X>\<C-P>\<C-N>'"
+endfor
+"tree
+autocmd VimEnter * execute 'NERDTree'
+"-------------ruby-------------------------
+au FileType ruby setlocal makeprg=ruby\ -c\ %
+au FileType ruby setlocal errorformat=%m\ in\ %f\ on\ line\ %l
+let g:rails_projections = {
+          \ "app/uploaders/*_uploader.rb": {
+          \   "command": "uploader",
+          \   "template":
+          \     "class %SUploader < CarrierWave::Uploader::Base\nend",
+          \   "test": "spec/models/%s_uploader_spec.rb",
+              \   "related": "app/models/images/%s.rb",
+          \   "keywords": "process version"
+          \ },}
+let g:syntastic_mode_map = { 'mode': 'passive',
+            \ 'active_filetypes': ['ruby'] }
+let g:syntastic_ruby_checkers = ['rubocop']
+"-------------tab-------------------------
+"function! s:my_tabline()  "{{{
+"  let s = ''
+"  for i in range(1, tabpagenr('$'))
+"    let bufnrs = tabpagebuflist(i)
+"    let bufnr = bufnrs[tabpagewinnr(i) - 1]  " first window, first appears
+"    let no = i  " display 0-origin tabpagenr.
+"    let mod = getbufvar(bufnr, '&modified') ? '!' : ' '
+"    let title = fnamemodify(bufname(bufnr), ':t')
+"    let title = '[' . title . ']'
+"    let s .= '%'.i.'T'
+"    let s .= '%#' . (i == tabpagenr() ? 'TabLineSel' : 'TabLine') . '#'
+"    let s .= no . ':' . title
+"    let s .= mod
+"    let s .= '%#TabLineFill# '
+"  endfor
+"  let s .= '%#TabLineFill#%T%=%#TabLine#'
+"  return s
+"endfunction "}}}
+"let &tabline = '%!'. s:SID_PREFIX() . 'my_tabline()'
+"set showtabline=2 " 常にタブラインを表示
+"-------------tab-------------------------
+"nnoremap <C-n>   gt
+"nnoremap <C-p>   gT
+
+"-------------sass-------------------------
+""{{{
+"let g:sass_compile_auto = 1
+"let g:sass_compile_cdloop = 5
+"let g:sass_compile_cssdir = ['css', 'stylesheet']
+"let g:sass_compile_file = ['scss', 'sass']
+"let g:sass_started_dirs = []
 "
-"
-" "ビープ音すべてを無効にする
-set visualbell t_vb=
-set noerrorbells "エラーメッセージの表示時にビープを鳴らさない
-syntax enable
-"行頭のスペースの連続をハイライトさせる
-""Tab文字も区別されずにハイライトされるので、区別したいときはTab文字の表示を別に
-"設定する必要がある。
-function! SOLSpaceHilight()
-    syntax match SOLSpace "^\s\+" display containedin=ALL
-    highlight SOLSpace term=underline ctermbg=LightGray
-endf
-"grep遅くない?
-let g:unite_source_grep_command = 'ag'
-let g:unite_source_grep_default_opts = '--nocolor --nogroup'                                                                                              
-let g:unite_source_grep_max_candidates = 200
-let g:unite_source_grep_recursive_opt = ''
-set nocompatible
-autocmd vimenter * NERDTree
+"autocmd FileType less,sass  setlocal sw=2 sts=2 ts=2 et
+"au! BufWritePost * SassCompile
+"}}}
+
+"-------------html5-------------------------
+syn keyword htmlTagName contained article aside audio bb canvas command
+syn keyword htmlTagName contained datalist details dialog embed figure
+syn keyword htmlTagName contained header hgroup keygen mark meter nav output
+syn keyword htmlTagName contained progress time ruby rt rp section time
+syn keyword htmlTagName contained source figcaption
+syn keyword htmlArg contained autofocus autocomplete placeholder min max
+syn keyword htmlArg contained contenteditable contextmenu draggable hidden
+syn keyword htmlArg contained itemprop list sandbox subject spellcheck
+syn keyword htmlArg contained novalidate seamless pattern formtarget
+syn keyword htmlArg contained formaction formenctype formmethod
+syn keyword htmlArg contained sizes scoped async reversed sandbox srcdoc
+syn keyword htmlArg contained hidden role
+syn match   htmlArg "\<\(aria-[\-a-zA-Z0-9_]\+\)=" contained
+syn match   htmlArg contained "\s*data-[-a-zA-Z0-9_]\+"
+"-------------html5-------------------------
+if &term =~ "xterm"
+    let &t_ti .= "\e[?2004h"
+    let &t_te .= "\e[?2004l"
+    let &pastetoggle = "\e[201~"
+
+    function XTermPasteBegin(ret)
+        set paste
+        return a:ret
+    endfunction
+
+    noremap <special> <expr> <Esc>[200~ XTermPasteBegin("0i")
+    inoremap <special> <expr> <Esc>[200~ XTermPasteBegin("")
+    cnoremap <special> <Esc>[200~ <nop>
+    cnoremap <special> <Esc>[201~ <nop>
+endif
